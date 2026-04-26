@@ -273,9 +273,21 @@ class MediaControlsWrapper extends BaseAudioHandler implements VideoPlayerContro
       return;
     }
 
+    stderr.writeln('FORK-DBG: play() before images access');
+    var poster;
+    try {
+      poster = playBackItem.images?.firstOrNull;
+      stderr.writeln('FORK-DBG: play() got poster=${poster?.path}');
+    } catch (e, st) {
+      stderr.writeln('FORK-DBG: play() IMAGES ACCESS THREW: $e\n$st');
+      rethrow;
+    }
     stderr.writeln('FORK-DBG: play() before windowSMTCSetup');
-    final poster = playBackItem.images?.firstOrNull;
-    windowSMTCSetup(playBackItem, currentPosition ?? Duration.zero);
+    try {
+      windowSMTCSetup(playBackItem, currentPosition ?? Duration.zero);
+    } catch (e, st) {
+      stderr.writeln('FORK-DBG: play() windowSMTCSetup INVOCATION threw: $e\n$st');
+    }
     stderr.writeln('FORK-DBG: play() after windowSMTCSetup');
 
     final hasNextVideo = ref.read(playBackModel.select((value) => value?.nextVideo != null));
