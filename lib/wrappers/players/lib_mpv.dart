@@ -210,11 +210,19 @@ class LibMPV extends BasePlayer {
     if (wantedAudioStream.index == AudioStreamModel.no().index) {
       await _player?.setAudioTrack(mpv.AudioTrack.no());
     } else {
-      final internalTracks = audioTracks.getRange(2, audioTracks.length).toList();
-      final audioTrack =
-          internalTracks.elementAtOrNull((playbackModel.audioStreams?.indexOf(wantedAudioStream) ?? -1) - 1);
-      if (audioTrack != null) {
-        await _player?.setAudioTrack(audioTrack);
+      // Guard against tracks-not-yet-parsed: for HTTPS-streamed sources
+      // (.strm-backed Easynews / remote URLs) the player has only just
+      // opened the stream when this is called — track metadata can still
+      // be empty. The original `getRange(2, length)` throws RangeError
+      // whenever length < 2. Skip the lookup if there's nothing to slice;
+      // mpv will pick its own default track.
+      if (audioTracks.length > 2) {
+        final internalTracks = audioTracks.getRange(2, audioTracks.length).toList();
+        final audioTrack =
+            internalTracks.elementAtOrNull((playbackModel.audioStreams?.indexOf(wantedAudioStream) ?? -1) - 1);
+        if (audioTrack != null) {
+          await _player?.setAudioTrack(audioTrack);
+        }
       }
     }
     return wantedAudioStream.index;
@@ -232,9 +240,15 @@ class LibMPV extends BasePlayer {
       return -1;
     }
     _currentSubtitleCodec = wantedSubtitle.codec;
-    final internalTrack = subTracks.getRange(2, subTracks.length).toList();
-    final index = playbackModel.subStreams?.sublist(1).indexWhere((element) => element.id == wantedSubtitle.id);
-    final subTrack = internalTrack.elementAtOrNull(index ?? -1);
+    // Same guard as setAudioTrack — subtitle tracks may not be parsed yet
+    // for HTTPS-streamed sources at this point in the load lifecycle.
+    final internalTrack = subTracks.length > 2
+        ? subTracks.getRange(2, subTracks.length).toList()
+        : <mpv.SubtitleTrack>[];
+    final index = (playbackModel.subStreams?.length ?? 0) > 1
+        ? playbackModel.subStreams!.sublist(1).indexWhere((element) => element.id == wantedSubtitle.id)
+        : -1;
+    final subTrack = internalTrack.elementAtOrNull(index);
     if (wantedSubtitle.isExternal && wantedSubtitle.url != null && subTrack == null) {
       await _player?.setSubtitleTrack(mpv.SubtitleTrack.uri(wantedSubtitle.url!));
     } else if (subTrack != null) {
