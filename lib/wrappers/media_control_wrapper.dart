@@ -248,26 +248,39 @@ class MediaControlsWrapper extends BaseAudioHandler implements VideoPlayerContro
 
   @override
   Future<void> play() async {
+    stderr.writeln('FORK-DBG: play() entry');
     WakelockPlus.enable();
+    stderr.writeln('FORK-DBG: play() before _player.play');
     _player?.play();
+    stderr.writeln('FORK-DBG: play() after _player.play');
 
     final currentPosition = await ref.read(playBackModel.select((value) => value?.startDuration()));
+    stderr.writeln('FORK-DBG: play() got currentPosition=$currentPosition');
     if (_isNewPlayback || !playbackState.value.playing) {
       _isNewPlayback = false;
       ref.read(playBackModel)?.playbackStarted(currentPosition ?? Duration.zero, ref);
     }
+    stderr.writeln('FORK-DBG: play() after playbackStarted');
 
     final playBackItem = ref.read(playBackModel.select((value) => value?.item));
-    if (playBackItem == null) return;
+    if (playBackItem == null) {
+      stderr.writeln('FORK-DBG: play() playBackItem null, returning');
+      return;
+    }
 
-    if (!ref.read(clientSettingsProvider).enableMediaKeys) return;
+    if (!ref.read(clientSettingsProvider).enableMediaKeys) {
+      stderr.writeln('FORK-DBG: play() mediaKeys disabled, returning early (super.play NOT called)');
+      return;
+    }
 
+    stderr.writeln('FORK-DBG: play() before windowSMTCSetup');
     final poster = playBackItem.images?.firstOrNull;
-
     windowSMTCSetup(playBackItem, currentPosition ?? Duration.zero);
+    stderr.writeln('FORK-DBG: play() after windowSMTCSetup');
 
     final hasNextVideo = ref.read(playBackModel.select((value) => value?.nextVideo != null));
     final hasPreviousVideo = ref.read(playBackModel.select((value) => value?.previousVideo != null));
+    stderr.writeln('FORK-DBG: play() before mediaItem.add');
 
     //Everything else setup
     mediaItem.add(MediaItem(
@@ -277,6 +290,7 @@ class MediaControlsWrapper extends BaseAudioHandler implements VideoPlayerContro
       duration: playBackItem.overview.runTime ?? const Duration(seconds: 0),
       artUri: poster != null ? Uri.parse(poster.path) : null,
     ));
+    stderr.writeln('FORK-DBG: play() before playbackState.add');
     playbackState.add(PlaybackState(
       playing: true,
       controls: [
@@ -294,8 +308,10 @@ class MediaControlsWrapper extends BaseAudioHandler implements VideoPlayerContro
       },
       processingState: AudioProcessingState.ready,
     ));
-
-    return super.play();
+    stderr.writeln('FORK-DBG: play() before super.play()');
+    final r = super.play();
+    stderr.writeln('FORK-DBG: play() called super.play, returning future');
+    return r;
   }
 
   Future<void> windowSMTCSetup(ItemBaseModel playBackItem, Duration currentPosition) async {
