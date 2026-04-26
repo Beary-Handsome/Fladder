@@ -165,6 +165,14 @@ class LibMPV extends BasePlayer {
   }
 
   void _finishedLoading() {
+    // Cancel the retry timer once the stream has actually started.
+    // Without this, the timer keeps re-calling _player.open() every few
+    // seconds for the full _maxRetryDuration, which interrupts the video
+    // pipeline mid-decode on HTTP-streamed sources (.strm-backed Easynews
+    // content, remote URLs, etc). Audio survives because it's already
+    // buffered, but video "keeps loading" forever.
+    _retryTimer?.cancel();
+    _retryTimer = null;
     _loadCompleter?.complete();
     _retryTimer?.cancel();
     _retryTimer = null;

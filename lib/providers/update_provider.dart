@@ -25,54 +25,25 @@ final hasNewUpdateProvider = Provider<bool>((ref) {
   return latestVersion != lastViewedVersion;
 });
 
+// PERSONAL FORK: update checking permanently disabled. We never want this
+// fork to surface "a new version is available" prompts because we're locked
+// to a known-good build with our own .strm fix. Original implementation
+// preserved in git history if you want to bring it back.
 @Riverpod(keepAlive: true)
 class Update extends _$Update {
   final updateChecker = UpdateChecker();
 
-  Timer? _timer;
-
   @override
   UpdatesModel build() {
-    ref.listen(
-        clientSettingsProvider.select((value) => value.checkForUpdates), (previous, next) => toggleUpdateChecker(next));
-    final checkForUpdates = ref.read(clientSettingsProvider.select((value) => value.checkForUpdates));
-
-    if (!checkForUpdates) {
-      _timer?.cancel();
-      return UpdatesModel();
-    }
-
-    ref.onDispose(() {
-      _timer?.cancel();
-    });
-
-    _timer?.cancel();
-
-    _timer = Timer.periodic(const Duration(minutes: 30), (timer) {
-      _fetchLatest();
-    });
-
-    _fetchLatest();
-
     return UpdatesModel();
   }
 
   void toggleUpdateChecker(bool checkForUpdates) {
-    _timer?.cancel();
-    if (checkForUpdates) {
-      _timer = Timer.periodic(const Duration(minutes: 30), (timer) {
-        _fetchLatest();
-      });
-      _fetchLatest();
-    }
+    // no-op: update checks are permanently off in this fork.
   }
 
   Future<List<ReleaseInfo>> _fetchLatest() async {
-    final latest = await updateChecker.fetchRecentReleases();
-    state = UpdatesModel(
-      lastRelease: latest,
-    );
-    return latest;
+    return const <ReleaseInfo>[];
   }
 }
 
