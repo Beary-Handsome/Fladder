@@ -114,7 +114,10 @@ jobs:
         # GitHub Secret), so we build the debug variant which gets signed
         # with Android's standard debug key. Sideloads fine on any personal
         # Android TV / phone / Chromecast TV / Nvidia Shield.
-        run: flutter build apk --debug
+        # --verbose surfaces gradle errors that flutter would otherwise
+        # swallow — without it a failed build prints only the cryptic
+        # "Gradle build failed to produce an .apk file" message.
+        run: flutter build apk --debug --verbose
 
       - name: Stage APK
         run: |

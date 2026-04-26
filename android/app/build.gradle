@@ -77,12 +77,19 @@ android {
         kotlinCompilerExtensionVersion '1.6.4'
     }
 
-    signingConfigs {
-        release {
-            storeFile file('keystore.jks')
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storePassword keystoreProperties['storePassword']
+    // Personal-fork: only declare the release signingConfig when the keystore
+    // is actually present. Upstream's CI populates keystore.jks from a
+    // GitHub Secret we don't have, so without this guard, Gradle's config
+    // phase fails on `assembleDebug` too — `file('keystore.jks')` is
+    // evaluated eagerly even if the release task is never invoked.
+    if (keystorePropertiesFile.exists()) {
+        signingConfigs {
+            release {
+                storeFile file('keystore.jks')
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storePassword keystoreProperties['storePassword']
+            }
         }
     }
     buildTypes {
@@ -90,7 +97,10 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            signingConfig signingConfigs.release
+            // Only attach the release signingConfig if it was actually declared.
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
 
             packagingOptions {
                 resources {
