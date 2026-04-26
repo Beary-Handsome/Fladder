@@ -315,6 +315,14 @@ class MediaControlsWrapper extends BaseAudioHandler implements VideoPlayerContro
   }
 
   Future<void> windowSMTCSetup(ItemBaseModel playBackItem, Duration currentPosition) async {
+    // SMTC is Windows-only; on Linux/macOS smtc is null and the
+    // MusicMetadata/PlaybackTimeline constructors below have been observed
+    // to throw RangeError synchronously (Linux-side libsmtc shims behaving
+    // unexpectedly). Short-circuit so we don't pay any cost on platforms
+    // that can't use SMTC anyway, and so a misbehaving constructor can't
+    // take down playback init.
+    if (smtc == null) return;
+    try {
     final poster = playBackItem.images?.firstOrNull;
     final mainContext = ref.read(localizationContextProvider);
 
@@ -336,6 +344,10 @@ class MediaControlsWrapper extends BaseAudioHandler implements VideoPlayerContro
 
     smtc?.enableSmtc();
     smtc?.setPlaybackStatus(PlaybackStatus.playing);
+    } catch (e, st) {
+      // Belt+suspenders: never let SMTC issues abort playback init.
+      stderr.writeln('FORK-DBG: windowSMTCSetup swallowed: $e\n$st');
+    }
   }
 
   @override
