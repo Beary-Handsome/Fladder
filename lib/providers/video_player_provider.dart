@@ -129,27 +129,15 @@ class VideoPlayerNotifier extends StateNotifier<MediaControlsWrapper> {
     PlaybackModel? newPlaybackModel = model;
 
     if (media != null) {
-      // PERSONAL FORK DEBUG: wrap each playback init step so the actual
-      // failing line + stack trace surfaces in the log instead of being
-      // swallowed as an opaque "Unhandled Exception".
-      try {
-        stderr.writeln('FORK-DBG: loadVideo(url=${model.media?.url})');
-        await state.loadVideo(model, startPosition, true);
-        stderr.writeln('FORK-DBG: setVolume');
-        await state.setVolume(ref.read(videoPlayerSettingsProvider).volume);
-        stderr.writeln('FORK-DBG: setAudioTrack (audioStreams.len=${model.audioStreams?.length})');
-        await state.setAudioTrack(null, model);
-        stderr.writeln('FORK-DBG: setSubtitleTrack (subStreams.len=${model.subStreams?.length})');
-        await state.setSubtitleTrack(null, model);
-        ref.read(playBackModel.notifier).update((state) => newPlaybackModel);
-        stderr.writeln('FORK-DBG: state.play()');
-        await state.play();
-        stderr.writeln('FORK-DBG: play() returned cleanly');
-        return true;
-      } catch (e, st) {
-        stderr.writeln('FORK-DBG: PLAYBACK INIT FAILED:\n  error: $e\n  stack:\n$st');
-        rethrow;
-      }
+      await state.loadVideo(model, startPosition, true);
+      await state.setVolume(ref.read(videoPlayerSettingsProvider).volume);
+
+      await state.setAudioTrack(null, model);
+      await state.setSubtitleTrack(null, model);
+      ref.read(playBackModel.notifier).update((state) => newPlaybackModel);
+
+      await state.play();
+      return true;
     }
 
     mediaState.update((state) => state.copyWith(errorPlaying: true));
