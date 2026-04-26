@@ -114,14 +114,17 @@ jobs:
         # GitHub Secret), so we build the debug variant which gets signed
         # with Android's standard debug key. Sideloads fine on any personal
         # Android TV / phone / Chromecast TV / Nvidia Shield.
-        # --verbose surfaces gradle errors that flutter would otherwise
-        # swallow — without it a failed build prints only the cryptic
-        # "Gradle build failed to produce an .apk file" message.
-        run: flutter build apk --debug --verbose
+        #
+        # --flavor production: the project declares two productFlavors
+        # (development with .dev suffix, production without). Without the
+        # flag Flutter looks for `app-debug.apk` but Gradle writes
+        # `app-{flavor}-debug.apk` and the build "succeeds" while Flutter
+        # reports "Gradle build failed to produce an .apk file."
+        run: flutter build apk --debug --flavor production
 
       - name: Stage APK
         run: |
-          cp build/app/outputs/flutter-apk/app-debug.apk Fladder-android.apk
+          cp build/app/outputs/flutter-apk/app-production-debug.apk Fladder-android.apk
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
