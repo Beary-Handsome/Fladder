@@ -29,7 +29,13 @@ class ImagesData {
   }
 
   ImageData? get firstOrNull {
-    return primary ?? backDrop?[0];
+    // Original was `primary ?? backDrop?[0]` — when primary was null AND
+    // backDrop was an empty list (Easynews-backed Episode items whose
+    // Jellyfin metadata has no backdrop image), backDrop?[0] indexed an
+    // empty list and threw RangeError. A `firstOrNull` getter should
+    // return null on empty, so do that.
+    final bd = backDrop;
+    return primary ?? (bd != null && bd.isNotEmpty ? bd.first : null);
   }
 
   ImageData? get randomBackDrop => (backDrop?..shuffle())?.firstOrNull ?? primary;
