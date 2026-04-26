@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -134,21 +133,21 @@ class VideoPlayerNotifier extends StateNotifier<MediaControlsWrapper> {
       // failing line + stack trace surfaces in the log instead of being
       // swallowed as an opaque "Unhandled Exception".
       try {
-        log('FORK-DBG: loadVideo(url=${model.media?.url})');
+        stderr.writeln('FORK-DBG: loadVideo(url=${model.media?.url})');
         await state.loadVideo(model, startPosition, true);
-        log('FORK-DBG: setVolume');
+        stderr.writeln('FORK-DBG: setVolume');
         await state.setVolume(ref.read(videoPlayerSettingsProvider).volume);
-        log('FORK-DBG: setAudioTrack (audioStreams.len=${model.audioStreams?.length})');
+        stderr.writeln('FORK-DBG: setAudioTrack (audioStreams.len=${model.audioStreams?.length})');
         await state.setAudioTrack(null, model);
-        log('FORK-DBG: setSubtitleTrack (subStreams.len=${model.subStreams?.length})');
+        stderr.writeln('FORK-DBG: setSubtitleTrack (subStreams.len=${model.subStreams?.length})');
         await state.setSubtitleTrack(null, model);
         ref.read(playBackModel.notifier).update((state) => newPlaybackModel);
-        log('FORK-DBG: state.play()');
+        stderr.writeln('FORK-DBG: state.play()');
         await state.play();
-        log('FORK-DBG: play() returned cleanly');
+        stderr.writeln('FORK-DBG: play() returned cleanly');
         return true;
       } catch (e, st) {
-        log('FORK-DBG: PLAYBACK INIT FAILED:\n  error: $e\n  stack:\n$st');
+        stderr.writeln('FORK-DBG: PLAYBACK INIT FAILED:\n  error: $e\n  stack:\n$st');
         rethrow;
       }
     }
