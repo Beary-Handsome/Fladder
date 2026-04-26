@@ -109,14 +109,16 @@ jobs:
         run: |
           dart run build_runner build --delete-conflicting-outputs
 
-      - name: Build Android APK (release, debug-signed for sideload)
-        # No upstream signing keys; debug-signed APKs sideload fine on any
-        # personal Android TV / phone / Chromecast TV.
-        run: flutter build apk --release
+      - name: Build Android APK (debug variant — auto-signed for sideload)
+        # We don't have the upstream's release keystore (it's a private
+        # GitHub Secret), so we build the debug variant which gets signed
+        # with Android's standard debug key. Sideloads fine on any personal
+        # Android TV / phone / Chromecast TV / Nvidia Shield.
+        run: flutter build apk --debug
 
       - name: Stage APK
         run: |
-          cp build/app/outputs/flutter-apk/app-release.apk Fladder-android.apk
+          cp build/app/outputs/flutter-apk/app-debug.apk Fladder-android.apk
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
