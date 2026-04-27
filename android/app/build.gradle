@@ -97,10 +97,10 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-            // Only attach the release signingConfig if it was actually declared.
-            if (keystorePropertiesFile.exists()) {
-                signingConfig signingConfigs.release
-            }
+            // Sign with the prod key when available, otherwise fall back to
+            // Android's debug key so the release-mode APK is still installable
+            // for personal-fork sideload (we don't have the upstream keystore).
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
 
             packagingOptions {
                 resources {

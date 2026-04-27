@@ -109,22 +109,25 @@ jobs:
         run: |
           dart run build_runner build --delete-conflicting-outputs
 
-      - name: Build Android APK (debug variant — auto-signed for sideload)
+      - name: Build Android APK (release — debug-key fallback in build.gradle)
         # We don't have the upstream's release keystore (it's a private
-        # GitHub Secret), so we build the debug variant which gets signed
-        # with Android's standard debug key. Sideloads fine on any personal
-        # Android TV / phone / Chromecast TV / Nvidia Shield.
+        # GitHub Secret), but android/app/build.gradle ternaries
+        # `signingConfig` to `signingConfigs.debug` when key.properties is
+        # absent, so a release-mode APK still produces an installable,
+        # debug-signed artifact. Release mode is what we actually want:
+        # AOT-compiled (no JIT lag on Android TV), R8-minified, and no
+        # DEBUG ribbon overlay.
         #
         # --flavor production: the project declares two productFlavors
         # (development with .dev suffix, production without). Without the
-        # flag Flutter looks for `app-debug.apk` but Gradle writes
-        # `app-{flavor}-debug.apk` and the build "succeeds" while Flutter
+        # flag Flutter looks for `app-release.apk` but Gradle writes
+        # `app-{flavor}-release.apk` and the build "succeeds" while Flutter
         # reports "Gradle build failed to produce an .apk file."
-        run: flutter build apk --debug --flavor production
+        run: flutter build apk --release --flavor production
 
       - name: Stage APK
         run: |
-          cp build/app/outputs/flutter-apk/app-production-debug.apk Fladder-android.apk
+          cp build/app/outputs/flutter-apk/app-production-release.apk Fladder-android.apk
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
