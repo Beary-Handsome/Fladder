@@ -155,7 +155,7 @@
   "@dashboardContinueWatching": {},
   "nextUp": "Next-up",
   "@nextUp": {},
-  "dashboardRecentlyAdded": "Recently added in {name}",
+  "dashboardRecentlyAdded": "{name}",
   "@dashboardRecentlyAdded": {
     "description": "Recently added on home screen",
     "placeholders": {
